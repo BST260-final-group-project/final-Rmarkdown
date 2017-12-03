@@ -9,5 +9,34 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Basic Models
 
+We use 5-fold cross validation to see how each model performs. (Code is on: https://github.com/BST260-final-group-project/04-Machine-Learning-Prediction/tree/HYJiang) 
+
+Each model's RMSE in cross validation (CV) and in leaderboard (LB) is as follows:
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(knitr)
+rmse_results <- data_frame(method = "Lasso", RMSE_CV = 0.1095, RMSE_LB = 0.1219)
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "Gradient Boosting (sklearn)",  
+                                     RMSE_CV = 0.1153,
+                                     RMSE_LB = 0.1204))
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "XGBoosting",  
+                                     RMSE_CV = 0.1146,
+                                     RMSE_LB = 0.1234))
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "Random Forest",  
+                                     RMSE_CV = 0.1360,
+                                     RMSE_LB = 0.1419))
+rmse_results %>% kable
+```
+
+Alough lasso performs best in cross validation, but gradient boosting model provided by sk-learn is better in leader board. We think that it comes from the overfitting problem of lasso regression. In both cross validation and leaderboard, the random forest does not perform well. In this test, random forest avoid the problem of overfitting, but it underfits the data at the same time.
+
+## Ensemble Method (Stacking)
+
+Based on the above result, we choose two models - lasso and gradient boosting in sklearn, and average their predictions to make our final prediction. The RMSE of the stacking model is 0.1169, which leads us to 385/2636 (top 15%) in the leaderboard
