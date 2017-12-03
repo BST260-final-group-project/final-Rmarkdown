@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Related Work
 
 #### Random Forest
-Random forest is an ensembling machine learning method basing on classification tree or regression tree. Random forest is robust and can ease the problem of overfitting. We will use random forest to predict the sale prices of the houses. (Liaw, Andy, and Matthew Wiener. "Classification and regression by randomForest." R news 2.3 (2002): 18-22.)
+Random forest is an ensembling machine learning method basing on classification tree or regression tree. In general, random forest will generate many decision trees and average their predictions to make the final prediction. When generating each decision tree, the random forest will use a subset of all features, which avoids the overfitting problem. (Liaw, Andy, and Matthew Wiener. "Classification and regression by randomForest." R news 2.3 (2002): 18-22.)
 
 #### Gradient Boosting
 
@@ -24,4 +24,7 @@ Ensemble learning combines multiple statistical and machine learning algorithms 
 
 In our project, we just simply stack several models, i.e. average their predictions to make our final prediction.
 
+#### Kernel from Kaggle
+
+In Kaggle community, many users provide their kernals to share ideas. Kernals we have seen are as follows (but not limited to): [Comprehensive data exploration with Python](https://www.kaggle.com/pmarcelino/comprehensive-data-exploration-with-python), [Stacked Regressions : Top 4% on LeaderBoard](https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard), [RandomForestRegressor](https://www.kaggle.com/dfitzgerald3/randomforestregressor).
 

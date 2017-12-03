@@ -128,7 +128,7 @@ $(document).ready(function () {
 <h2>Related Work</h2>
 <div id="random-forest" class="section level4">
 <h4>Random Forest</h4>
-<p>Random forest is an ensembling machine learning method basing on classification tree or regression tree. Random forest is robust and can ease the problem of overfitting. We will use random forest to predict the sale prices of the houses. (Liaw, Andy, and Matthew Wiener. “Classification and regression by randomForest.” R news 2.3 (2002): 18-22.)</p>
+<p>Random forest is an ensembling machine learning method basing on classification tree or regression tree. In general, random forest will generate many decision trees and average their predictions to make the final prediction. When generating each decision tree, the random forest will use a subset of all features, which avoids the overfitting problem. (Liaw, Andy, and Matthew Wiener. “Classification and regression by randomForest.” R news 2.3 (2002): 18-22.)</p>
 </div>
 <div id="gradient-boosting" class="section level4">
 <h4>Gradient Boosting</h4>
@@ -138,6 +138,10 @@ $(document).ready(function () {
 <h4>Ensemble Learning</h4>
 <p>Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model can cancel out to certain degree. In our project, we will try to ensemble the regression techniques we use (e.g. GLM, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. “Ensemble learning.” The handbook of brain theory and neural networks 2 (2002): 110-125.)</p>
 <p>In our project, we just simply stack several models, i.e. average their predictions to make our final prediction.</p>
+</div>
+<div id="kernel-from-kaggle" class="section level4">
+<h4>Kernel from Kaggle</h4>
+<p>In Kaggle community, many users provide their kernals to share ideas. Kernals we have seen are as follows (but not limited to): <a href="https://www.kaggle.com/pmarcelino/comprehensive-data-exploration-with-python">Comprehensive data exploration with Python</a>, <a href="https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard">Stacked Regressions : Top 4% on LeaderBoard</a>, <a href="https://www.kaggle.com/dfitzgerald3/randomforestregressor">RandomForestRegressor</a>.</p>
 </div>
 </div>
 
