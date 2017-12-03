@@ -1,0 +1,27 @@
+---
+title: "Related Work"
+author: "HYJiang"
+date: "11/28/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Related Work
+
+#### Random Forest
+Random forest is an ensembling machine learning method basing on classification tree or regression tree. Random forest is robust and can ease the problem of overfitting. We will use random forest to predict the sale prices of the houses. (Liaw, Andy, and Matthew Wiener. "Classification and regression by randomForest." R news 2.3 (2002): 18-22.)
+
+#### Gradient Boosting
+
+Similar to random forest, gradient boosting is another ensembling machine learning method basing on classification tree or regression tree. While in random forest every tree is weighted the same, every tree in gradient boosting tries to minimize the error between target and trees built previously. Gradient boosting is now a popular machine learning framework for both academia and industry. (Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.)
+
+#### Ensemble Learning
+
+Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model can cancel out to certain degree. In our project, we will try to ensemble the regression techniques we use (e.g. GLM, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. "Ensemble learning." The handbook of brain theory and neural networks 2 (2002): 110-125.)
+
+In our project, we just simply stack several models, i.e. average their predictions to make our final prediction.
+
+

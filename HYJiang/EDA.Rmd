@@ -1,0 +1,48 @@
+---
+title: "EDA"
+author: "HYJiang"
+date: "11/28/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Lasso
+
+```{r}
+# Lasso library
+library(glmnet)
+library(dplyr)
+data_all <- read.csv("feature_fillna_onehot.csv")
+data_all <- data_all %>% mutate(TotalSF = TotalBsmtSF + X1stFlrSF + X2ndFlrSF)
+
+# Delete "Id" and "source" in train data
+data_train <- data_all %>% filter(source == "train")
+data_train <- subset(data_train, select = -Id)
+data_train <- subset(data_train, select = -source)
+
+# X and y for training
+y_train <- data_train$SalePrice
+X_train <- subset(data_train, select = -SalePrice)
+
+# Scale numerical features
+#col_num <- c("LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", 
+#               "TotalBsmtSF", "X1stFlrSF", "X2ndFlrSF", "LowQualFinSF", "GrLivArea", "TotRmsAbvGrd", 
+#               "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch",
+#              "PoolArea", "MiscVal", "TotalSF")
+#for (col in col_num){
+#  X_train[col] <- scale(X_train[col])
+#}
+
+# It is easier to interpret the result if the data is not scaled
+# Lasso regression
+fit = glmnet(as.matrix(X_train), y_train)
+#plot(fit)
+
+# Cross validation to find the optimal lambda
+cvfit <- cv.glmnet(as.matrix(X_train), y_train)
+coef(cvfit, s = "lambda.min")
+```
+
