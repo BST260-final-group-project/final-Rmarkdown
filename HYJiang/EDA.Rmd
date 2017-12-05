@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Lasso library
+library(assertive, warn.conflicts = FALSE)
 library(glmnet)
 library(dplyr)
 data_all <- read.csv("feature_fillna_onehot.csv")
@@ -28,13 +29,13 @@ y_train <- data_train$SalePrice
 X_train <- subset(data_train, select = -SalePrice)
 
 # Scale numerical features
-#col_num <- c("LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", 
-#               "TotalBsmtSF", "X1stFlrSF", "X2ndFlrSF", "LowQualFinSF", "GrLivArea", "TotRmsAbvGrd", 
-#               "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch",
-#              "PoolArea", "MiscVal", "TotalSF")
-#for (col in col_num){
-#  X_train[col] <- scale(X_train[col])
-#}
+col_num <- c("LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", 
+               "TotalBsmtSF", "X1stFlrSF", "X2ndFlrSF", "LowQualFinSF", "GrLivArea", "TotRmsAbvGrd", 
+               "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch",
+              "PoolArea", "MiscVal", "TotalSF")
+for (col in col_num){
+  X_train[col] <- scale(X_train[col])
+}
 
 # It is easier to interpret the result if the data is not scaled
 # Lasso regression
