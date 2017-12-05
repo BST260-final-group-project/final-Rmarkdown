@@ -1,0 +1,64 @@
+---
+title: "EDA-Jiajing"
+author: "Jiajing"
+date: "12/4/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tableplot) 
+library(dplyr)
+```
+
+Here are some of the plots generated with R package tabplots to show the number and range of values for each variable as well as the covariance among the variables:
+
+```{r}
+train<- read.csv("train.csv")
+columns <- c("numeric",
+             rep("character", 2),
+             rep("numeric", 2),
+             rep("character", 12),
+             rep("numeric", 4),
+             rep("character", 5),
+             "numeric",
+             rep("character", 7),
+             "numeric",
+             "character",
+             rep("numeric", 3),
+             rep("character", 4),
+             rep("numeric", 10),
+             "character",
+             "numeric",
+             "character",
+             "numeric",
+             rep("character", 2),
+             "numeric",
+             "character",
+             rep("numeric", 2),
+             rep("character", 3),
+             rep("numeric", 6),
+             rep("character", 3),
+             rep("numeric", 3),
+             rep("character", 2),
+             rep("numeric"))
+
+train$SalePrice <- log(train$SalePrice) # To respect lrmse
+train_visu <- as.data.frame(train)
+
+for (i in 1:80) {
+  if (typeof(train_visu[, i]) == "character") {
+    train_visu[is.na(train_visu[, i]), i] <- ""
+    train_visu[, i] <- as.factor(train_visu[, i])
+  }
+}
+
+for (i in 1:16) {
+  plot(tableplot(train_visu, select = c(((i - 1) * 5 + 1):(i * 5), 81), sortCol = 6, nBins = 73, plot = FALSE), fontsize = 12, title = paste("log(SalePrice) vs ", paste(colnames(train_visu)[((i - 1) * 5 + 1):(i * 5)], collapse = "+"), sep = ""), showTitle = TRUE, fontsize.title = 12)
+}
+```
+
