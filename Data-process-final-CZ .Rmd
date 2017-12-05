@@ -1,0 +1,75 @@
+---
+title: "data process final"
+author: "CHI ZHANG"
+date: "12/4/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r, message=FALSE}
+#combine train and test data set 
+library(readr)
+train <- read_csv("./train.csv")
+test <- read_csv("./test.csv")
+combined <- rbind(within(train, rm('Id','SalePrice')), within(test, rm('Id')))
+#check NA in dataset
+na.cols <- which(colSums(is.na(combined)) > 0)
+sort(colSums(sapply(combined[na.cols], is.na)), decreasing = TRUE)
+# we can see that there are 34 columns have missing value, some of them are pretty small part is missing, which can be seen as mistake; while the others contain such a big percentage missing value, such as MiscFeature(2814/2919), over 96% of this column is missing value. 
+```
+
+From the previous check, we can find that our dataset has a lot of missing value, which we need to clean the dataset and fill in the NA with appropriate value to make our prediction. Then, we try to fill the NAs by using their properties according to the value in those columns. 
+
+First, for the columns contain large percentage of NAs, we may remove the columns or combine them with other columns and we fill in the missing value with "none".
+
+PoolQC(2909/2919=99.66%)
+MiscFeature(2814/2919=96.4%)
+Alley(2721/2919=93.22%)
+
+Then, we will deal with the other columns which contain NAs by replacing the missing values according to the strong correlation within those columns and determine the value we should fill in. 
+
+1.For columns like Fence, FireplaceQu, BsmtCond, BsmtExposure, BsmtFinType2, BsmtFinType1, BsmtFinSF2 and BsmtQual, the NA is meaningful, thus, we see these NAs as no fence, no fireplace, no Basement, and when we transform these categorical data into numeric ones, we set these NAs as 0.
+
+2.GarageQual and GarageCond, which highly correlated, we keep GarageQual and remove GarageCond, and then transform into numeric data
+
+3.GarageYrBlt:159 NAs, except one outlier(2207), which we deal with a typo, and change that to '2007'("YearBuilt" = 2006); others, we saw those as the very original ones which maybe built earlier than the data can be reached, Min-1 = 1894
+
+4.For Exterior1st and Exterior2nd, which only contain 1 missing value and there aren’t any other features that can help us determine what value we should fill in the NAs, therefore,  we replace NAs in these two columns with ‘Other’.
+
+5.In the columns that with only few missing values, we can replace the missing value with median, mean or mode value from each column
+```{r, message=FALSE}
+#KitchenQual: filling the missing value with 'TA'.
+
+#Electrical: filling the missing value with 'FuseA'
+
+#Utilities: filling the missing value with 'AllPub'
+
+#SaleType: filling the missing value with 'WD'
+
+#Mszoning: filling the missing value according to the frequent value for each subclass 
+combined$MSZoning[c(2217,2905)] = 'RL'
+combined$MSZoning[c(1916,2251)] = 'RM'
+
+#GarageArea, GarageCars, GarageFinish, GarageType, LotFrontage, Functional: fill the missing value by using median
+
+#MasVnrType&MasVnrArea: for the ones have both NAs in these two columns, fill in the NAs with 'none' in MasVnrType and '0' in MasVnrArea, and only one with MasVnrArea but not type(#2611, estimate type by similar area-Brkface)
+combined[2611, 'MasVnrType'] = 'BrkFace'
+
+#BsmtFinSF1, BsmtUnfSF: filling in the missing value with mean 
+
+#BsmtFullBath & BsmtHalfBath: fill in the NAs with '0'
+
+```
+
+Finally, after filling in the missing value of our original dataset, we can also combine some columns and transform ordinal feature into numeric to make better prediction, which can solve our initial objectives of our project.
+
+1.combine bath= full bath + half bath
+
+2.Transform ordinal feature, such as ExterCond, ExterQual, Functional, GarageFinish, GarageQual, HeatingQC, KitchenQual, OverallCond, OverallQual, BsmtCond, BsmtQual, BsmtExposure, BsmtFinType1, BsmtFinType2, GarageCond, PavedDrive to numeric data
+
+3.Also, some columns in our dataset such as MoSold and MSSubClassRead, they are read as numerical but actually are categorical.
