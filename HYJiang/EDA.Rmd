@@ -9,13 +9,18 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Lasso
+#### Lasso
 
-```{r}
+The result of lasso regression on non-scale data is as follows. We also show the cofficients of lasso regression under the optimal parameter.
+
+```{r, echo=FALSE, message=FALSE}
 # Lasso library
 library(assertive, warn.conflicts = FALSE)
 library(glmnet)
 library(dplyr)
+
+# Set seed
+set.seed(260)
 data_all <- read.csv("feature_fillna_onehot.csv")
 data_all <- data_all %>% mutate(TotalSF = TotalBsmtSF + X1stFlrSF + X2ndFlrSF)
 
@@ -29,21 +34,22 @@ y_train <- data_train$SalePrice
 X_train <- subset(data_train, select = -SalePrice)
 
 # Scale numerical features
-col_num <- c("LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", 
-               "TotalBsmtSF", "X1stFlrSF", "X2ndFlrSF", "LowQualFinSF", "GrLivArea", "TotRmsAbvGrd", 
-               "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch",
-              "PoolArea", "MiscVal", "TotalSF")
-for (col in col_num){
-  X_train[col] <- scale(X_train[col])
-}
+#col_num <- c("LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", 
+#               "TotalBsmtSF", "X1stFlrSF", "X2ndFlrSF", "LowQualFinSF", "GrLivArea", "TotRmsAbvGrd", 
+#               "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch",
+#              "PoolArea", "MiscVal", "TotalSF")
+#for (col in col_num){
+#  X_train[col] <- scale(X_train[col])
+#}
 
 # It is easier to interpret the result if the data is not scaled
 # Lasso regression
 fit = glmnet(as.matrix(X_train), y_train)
-#plot(fit)
+plot(fit)
 
 # Cross validation to find the optimal lambda
 cvfit <- cv.glmnet(as.matrix(X_train), y_train)
 coef(cvfit, s = "lambda.min")
 ```
 
+Based on the result of lasso regression, we can know the average price for some house components. A fire place is worth 3000 dollars while a full bath only costs us 130 dollars (the price of bathroom is a little weired). The coefficient of RoofMatl_ClyTile is -527,000, which means that house would be super cheap if its roof material is clay tile. The lasso also tells us that it doesn't matter in which month you sell your house.
