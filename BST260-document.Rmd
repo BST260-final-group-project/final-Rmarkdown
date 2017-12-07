@@ -251,7 +251,7 @@ The result was obtained from gradient boosting (xgboosting) based on H2o cluster
 
 Our goal is to minimize the RMSE after log transformation, so when training the model, the target value is the logarithm of the observed sales price. Besides, we add one more feature - total square feet "TotalSF", which is defined as TotalSF = TotalBsmtSF + 1stFlrSF + 2ndFlrSF.
 
-Some models (e.g linear models) perform better when the predictors are "normal". Therefore we use Box-Cox transformation to transform the features of which skewness is high. [Skewness](https://en.wikipedia.org/wiki/Skewness) is defined as:
+Some models (e.g. linear models) perform better when the predictors are "normal". Therefore we use Box-Cox transformation to transform the features of which skewness is high. [Skewness](https://en.wikipedia.org/wiki/Skewness) is defined as:
 
 $$
 \gamma_1 = \frac{E[{(X-\mu)}^3]}{{(E[{(X-\mu)}^2])}^{1.5}}.
@@ -296,4 +296,4 @@ Alough lasso performs best in cross validation, but gradient boosting model prov
 
 #### 6.2 Ensemble Method (Stacking)
 
-Based on the above result, we choose two models - lasso and gradient boosting in sklearn, and average their predictions to make our final prediction. The RMSE of the stacking model is 0.1169, which leads us to 385/2636 (top 15%) in the leaderboard.
+Based on the above result, we choose two models - lasso and gradient boosting in sklearn, and average their predictions to make our final prediction. The RMSE of the stacking model is 0.1169, which leads us to 358/2636 (top 15%) in the leaderboard.

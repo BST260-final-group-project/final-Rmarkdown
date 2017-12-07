@@ -570,7 +570,7 @@ combined[2611, 'MasVnrType'] = 'BrkFace'
 <div id="final-analysis" class="section level2">
 <h2>6 Final Analysis</h2>
 <p>Our goal is to minimize the RMSE after log transformation, so when training the model, the target value is the logarithm of the observed sales price. Besides, we add one more feature - total square feet “TotalSF”, which is defined as TotalSF = TotalBsmtSF + 1stFlrSF + 2ndFlrSF.</p>
-<p>Some models (e.g linear models) perform better when the predictors are “normal”. Therefore we use Box-Cox transformation to transform the features of which skewness is high. <a href="https://en.wikipedia.org/wiki/Skewness">Skewness</a> is defined as:</p>
+<p>Some models (e.g. linear models) perform better when the predictors are “normal”. Therefore we use Box-Cox transformation to transform the features of which skewness is high. <a href="https://en.wikipedia.org/wiki/Skewness">Skewness</a> is defined as:</p>
 <p><span class="math display">\[
 \gamma_1 = \frac{E[{(X-\mu)}^3]}{{(E[{(X-\mu)}^2])}^{1.5}}.
 \]</span> <a href="https://en.wikipedia.org/wiki/Power_transform">One-paramter Box-Cox transformation</a> is defined as:</p>
@@ -621,7 +621,7 @@ x_i^{(\lambda)} = \frac{x_i^{\lambda}-1}{\lambda}.
 </div>
 <div id="ensemble-method-stacking" class="section level4">
 <h4>6.2 Ensemble Method (Stacking)</h4>
-<p>Based on the above result, we choose two models - lasso and gradient boosting in sklearn, and average their predictions to make our final prediction. The RMSE of the stacking model is 0.1169, which leads us to 385/2636 (top 15%) in the leaderboard.</p>
+<p>Based on the above result, we choose two models - lasso and gradient boosting in sklearn, and average their predictions to make our final prediction. The RMSE of the stacking model is 0.1169, which leads us to 358/2636 (top 15%) in the leaderboard.</p>
 </div>
 </div>
 
