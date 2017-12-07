@@ -9,6 +9,51 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+#### Area vs Price
+
+```{r, echo=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+data_train <- read.csv("train.csv")
+data_train %>% ggplot(aes(x = GrLivArea, y = SalePrice)) +
+  geom_point() +
+  xlab("Above Ground Living Area") +
+  ylab("Sale Price")
+```
+
+There are two outliers which has high areas but low sale price. When fitting the models, we delete these two outliers in the training data.
+
+#### Overall Quality vs Price
+
+```{r, message=FALSE, echo=FALSE}
+data_train %>% ggplot(aes(x=as.factor(OverallQual), y=SalePrice)) +
+  geom_boxplot() +
+  xlab("Overall Quality") +
+  ylab("Sale Price")
+```
+
+Conincided with our intuition, if the overall quality of the house is better, then the house price is higher.
+
+#### Year vs Price
+```{r, echo=FALSE}
+data_train %>% ggplot(aes(x=as.factor(YearBuilt), y=SalePrice)) +
+  geom_boxplot() +
+  xlab("Year Built") +
+  ylab("Sale Price") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r, echo=FALSE}
+data_train %>% ggplot(aes(x=as.factor(YearRemodAdd), y=SalePrice)) +
+  geom_boxplot() +
+  xlab("Year Remodel") +
+  ylab("Sale Price") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+In general, the newer the house is, the higher the price is. But the correlation is not very strong.
+
+
 #### Lasso
 
 The result of lasso regression on non-scale data is as follows. We also show the cofficients of lasso regression under the optimal parameter.

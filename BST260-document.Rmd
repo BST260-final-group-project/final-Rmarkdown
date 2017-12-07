@@ -123,7 +123,52 @@ Finally, we use one-hot method to deal with categorical features excluding ordin
 
 ## 5 Exploratory Analysis
 
-#### Lasso
+#### Area vs Price
+
+```{r, echo=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+data_train <- read.csv("train.csv")
+data_train %>% ggplot(aes(x = GrLivArea, y = SalePrice)) +
+  geom_point() +
+  xlab("Above Ground Living Area") +
+  ylab("Sale Price")
+```
+
+There are two outliers which has high areas but low sale price. When fitting the models, we delete these two outliers in the training data.
+
+#### Overall Quality vs Price
+
+```{r, message=FALSE, echo=FALSE}
+data_train %>% ggplot(aes(x=as.factor(OverallQual), y=SalePrice)) +
+  geom_boxplot() +
+  xlab("Overall Quality") +
+  ylab("Sale Price")
+```
+
+Conincided with our intuition, if the overall quality of the house is better, then the house price is higher.
+
+#### Year vs Price
+```{r, echo=FALSE}
+data_train %>% ggplot(aes(x=as.factor(YearBuilt), y=SalePrice)) +
+  geom_boxplot() +
+  xlab("Year Built") +
+  ylab("Sale Price") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r, echo=FALSE}
+data_train %>% ggplot(aes(x=as.factor(YearRemodAdd), y=SalePrice)) +
+  geom_boxplot() +
+  xlab("Year Remodel") +
+  ylab("Sale Price") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+In general, the newer the house is, the higher the price is. But the correlation is not very strong.
+
+
+#### Lasso Regression
 
 To get some intuition about the features, we do not scale the values of each feature, which makes the result easier to interprete. The result of lasso regression on non-scale data is as follows. We also show the cofficients of lasso regression under the optimal parameter.
 
@@ -172,6 +217,19 @@ Based on the result of lasso regression, we can know the average price for some 
 
 ## 6 Final Analysis
 
+Our goal is to minimize the RMSE after log transformation, so when training the model, the target value is the logarithm of the observed sales price. Besides, we add one more feature - total square feet "TotalSF", which is defined as TotalSF = TotalBsmtSF + 1stFlrSF + 2ndFlrSF.
+
+Some models (e.g linear models) perform better when the predictors are "normal". Therefore we use Box-Cox transformation to transform the features of which skewness is high. [Skewness](https://en.wikipedia.org/wiki/Skewness) is defined as:
+
+$$
+\gamma_1 = \frac{E[{(X-\mu)}^3]}{{(E[{(X-\mu)}^2])}^{1.5}}.
+$$
+[One-paramter Box-Cox transformation](https://en.wikipedia.org/wiki/Power_transform) is defined as:
+
+$$
+x_i^{(\lambda)} = \frac{x_i^{\lambda}-1}{\lambda}.
+$$
+
 #### 6.1 Basic Models
 
 We use 5-fold cross validation to see how each model performs. (Code is on: https://github.com/BST260-final-group-project/04-Machine-Learning-Prediction/tree/HYJiang) 
@@ -195,10 +253,14 @@ rmse_results <- bind_rows(rmse_results,
                           data_frame(method = "Random Forest",  
                                      RMSE_CV = 0.1360,
                                      RMSE_LB = 0.1419))
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "PCA + LOESS",  
+                                     RMSE_CV = NA,
+                                     RMSE_LB = 0.1587))
 rmse_results %>% kable
 ```
 
-Alough lasso performs best in cross validation, but gradient boosting model provided by sk-learn is better in leader board. We think that it comes from the overfitting problem of lasso regression. In both cross validation and leaderboard, the random forest does not perform well. In this test, random forest avoid the problem of overfitting, but it underfits the data at the same time.
+Alough lasso performs best in cross validation, but gradient boosting model provided by sk-learn is better in leader board. We think that it comes from the overfitting problem of lasso regression. In both cross validation and leaderboard, the random forest does not perform well. In this test, random forest avoid the problem of overfitting, but it underfits the data at the same time. The "PCA + LOESS" model performs worst, since  LOESS model is not a good model for complex regression problem.
 
 #### 6.2 Ensemble Method (Stacking)
 
