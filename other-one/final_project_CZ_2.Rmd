@@ -1,0 +1,127 @@
+---
+title: "Stepwise"
+author: "CHI ZHANG"
+date: "12/3/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(dplyr)
+library(readr)
+dat_scaled_onehot <- read_csv("~/Desktop/feature_fillna_scaled_onehot.csv")
+dat_scale_small <- dat_scaled_onehot %>% filter(source=="train")
+#forest
+data_fac=dat_scale_small %>% mutate_if(is.character, as.factor)
+BadNames <-  c(FirstFlrSF = "1stFlrSF", SecondFlrSF = "2ndFlrSF", ThreeSsnPorch = "3SsnPorch")
+for (i in 1:length(BadNames)) {
+  colnames(data_fac)[which(colnames(data_fac) == BadNames[i])] = names(BadNames[i])
+}
+library(randomForest)
+forest <- randomForest(SalePrice~.,data_fac, ntree=300,keep.forest=FALSE,importance=TRUE)
+varImpPlot(forest)
+
+
+#correlation
+library(corrplot)
+correlations<-cor(dat_scale_small[,unlist(lapply(dat_scale_small, is.numeric))])
+
+# only want the columns that show strong correlations with SalePrice
+corr.SalePrice <- as.matrix(sort(correlations[,'SalePrice'], decreasing = TRUE))
+
+corr.idx <- names(which(apply(corr.SalePrice, 1, function(x) (x > 0.5 | x < -0.5))))
+
+corrplot(as.matrix(correlations[corr.idx,corr.idx]), type = 'upper', method='color', addCoef.col = 'black', tl.cex = .7,cl.cex = .7, number.cex=.7)
+```
+
+In this part, to show correlation coefficients between sets of variables in our dataset, we used correlation matrix and then graphiclly display that through corrplot function. From the above correlogram, we can easily learn that saleprice have strong positive correlation with some factors such as overallquality(0.79), GrLiveArea(Above grade (ground) living area square feet)(0.71), ExterQual(the quality of the material on the exterior)(0.68). This correlogram can give some basic information about the relationship between variables and saleprice, which we need to predict in the future. 
+
+```{r}
+#Stepwise using scaled data
+drop <- c("Id","SalePrice","source")
+dat_scale_small1 = dat_scale_small[,!(names(dat_scale_small) %in% drop)]
+
+BadNames <-  c(FirstFlrSF = "1stFlrSF", SecondFlrSF = "2ndFlrSF", ThreeSsnPorch = "3SsnPorch")
+
+for (i in 1:length(BadNames)) {
+  colnames(dat_scale_small)[which(colnames(dat_scale_small) == BadNames[i])] = names(BadNames[i])
+}
+
+for (i in 1:length(BadNames)) {
+  colnames(dat_scale_small1)[which(colnames(dat_scale_small1) == BadNames[i])] = names(BadNames[i])
+}
+
+f <- as.formula(paste('SalePrice ~', paste(colnames(dat_scale_small1), collapse='+')))
+
+#step1 <- step(lm(SalePrice ~ 1, data = dat_scale_small), ~HeatingQC + KitchenAbvGr + KitchenQual + LotArea + LotFrontage + LowQualFinSF + MasVnrArea + MiscVal + ExterCond + ExterQual + Fence + FireplaceQu + Fireplaces + Functional + GarageArea + GarageFinish + GarageQual + GarageYrBlt + GrLivArea + Bath + FirstFlrSF + SecondFlrSF + ThreeSsnPorch + BedroomAbvGr + BsmtCond + BsmtExposure + BsmtFinSF1 + BsmtFinSF2 + BsmtFinType1 + BsmtFinType2 + BsmtFullBath + BsmtHalfBath + BsmtQual + BsmtUnfSF + OpenPorchSF + OverallCond + OverallQual + PavedDrive + PoolArea + ScreenPorch + TotRmsAbvGrd + TotalBsmtSF + WoodDeckSF + YearBuilt + YearRemodAdd + YrSold + Heating_Floor + Heating_GasA + Heating_GasW + Heating_Grav + Heating_OthW + Heating_Wall + HouseStyle_1.5Fin + HouseStyle_1.5Unf + HouseStyle_1Story + HouseStyle_2.5Fin + HouseStyle_2.5Unf + HouseStyle_2Story + HouseStyle_SFoyer + HouseStyle_SLvl + LandContour_Bnk + LandContour_HLS + LandContour_Low + LandContour_Lvl + LandSlope_Gtl + LandSlope_Mod + LandSlope_Sev + LotConfig_Corner + LotConfig_CulDSac + LotConfig_FR2 + LotConfig_FR3 + LotConfig_Inside + LotShape_IR1 + LotShape_IR2 + LotShape_IR3 + LotShape_Reg + MSSubClass_120 + MSSubClass_150 + MSSubClass_160 + MSSubClass_180 + MSSubClass_190 + MSSubClass_20 + MSSubClass_30 + MSSubClass_40 + MSSubClass_45 + MSSubClass_50 + MSSubClass_60 + MSSubClass_70 + MSSubClass_75 + MSSubClass_80 + MSSubClass_85 + MSSubClass_90 + MSZoning_C_all + MSZoning_FV + MSZoning_RH + MSZoning_RL + MSZoning_RM + MasVnrType_BrkCmn + MasVnrType_BrkFace + MasVnrType_None + MasVnrType_Stone + MiscFeature_Gar2 + MiscFeature_Othr + MiscFeature_Shed + MiscFeature_TenC + MiscFeature_none + MoSold_1 + MoSold_10 + MoSold_11 + MoSold_12 + MoSold_2 + MoSold_3 + MoSold_4 + MoSold_5 + MoSold_6 + MoSold_7 + MoSold_8 + MoSold_9 + Neighborhood_Blmngtn + Neighborhood_Blueste + Neighborhood_BrDale + Neighborhood_BrkSide + Neighborhood_ClearCr + Neighborhood_CollgCr + Neighborhood_Crawfor + Neighborhood_Edwards + Neighborhood_Gilbert + Neighborhood_IDOTRR + Neighborhood_MeadowV + Neighborhood_Mitchel + Neighborhood_NAmes + Neighborhood_NPkVill + Neighborhood_NWAmes + Neighborhood_NoRidge + Neighborhood_NridgHt + Neighborhood_OldTown + Neighborhood_SWISU + Neighborhood_Sawyer + Neighborhood_SawyerW + Neighborhood_Somerst + Neighborhood_StoneBr + Neighborhood_Timber + Neighborhood_Veenker + Exterior1st_AsbShng + Exterior1st_AsphShn + Exterior1st_BrkComm + Exterior1st_BrkFace + Exterior1st_CBlock + Exterior1st_CemntBd + Exterior1st_HdBoard + Exterior1st_ImStucc + Exterior1st_MetalSd + Exterior1st_Other + Exterior1st_Plywood + Exterior1st_Stone + Exterior1st_Stucco + Exterior1st_VinylSd + Exterior1st_WdSdng + Exterior1st_WdShing + Exterior2nd_AsbShng + Exterior2nd_AsphShn + Exterior2nd_BrkCmn + Exterior2nd_BrkFace + Exterior2nd_CBlock + Exterior2nd_CmentBd + Exterior2nd_HdBoard + Exterior2nd_ImStucc + Exterior2nd_MetalSd + Exterior2nd_Other + Exterior2nd_Plywood + Exterior2nd_Stone + Exterior2nd_Stucco + Exterior2nd_VinylSd + Exterior2nd_WdSdng + Exterior2nd_WdShng + Foundation_BrkTil + Foundation_CBlock + Foundation_PConc + Foundation_Slab + Foundation_Stone + Foundation_Wood + GarageType_2Types + GarageType_Attchd + GarageType_Basment + GarageType_BuiltIn + GarageType_CarPort + GarageType_Detchd + GarageType_NoGarage + Alley_Grvl + Alley_None + Alley_Pave + BldgType_1Fam + BldgType_2fmCon + BldgType_Duplex + BldgType_Twnhs + BldgType_TwnhsE + CentralAir_N + CentralAir_Y + Condition1_Artery + Condition1_Feedr + Condition1_Norm + Condition1_PosA + Condition1_PosN + Condition1_RRAe + Condition1_RRAn + Condition1_RRNe + Condition1_RRNn + Condition2_Artery + Condition2_Feedr + Condition2_Norm + Condition2_PosA + Condition2_PosN + Condition2_RRAe + Condition2_RRAn + Condition2_RRNn + Electrical_FuseA + Electrical_FuseF + Electrical_FuseP + Electrical_Mix + Electrical_SBrkr + PoolQC_Good + PoolQC_None + RoofMatl_ClyTile + RoofMatl_CompShg + RoofMatl_Membran + RoofMatl_Metal + RoofMatl_Roll + RoofMatl_TarGrv + RoofMatl_WdShake + RoofMatl_WdShngl + RoofStyle_Flat + RoofStyle_Gable + RoofStyle_Gambrel + RoofStyle_Hip + RoofStyle_Mansard + RoofStyle_Shed + SaleType_COD + SaleType_CWD + SaleType_Con + SaleType_ConLD + SaleType_ConLI + SaleType_ConLw + SaleType_New + SaleType_Oth + SaleType_WD + Street_Grvl + Street_Pave + Utilities_AllPub + Utilities_NoSeWa, direction = "both")
+
+#final stepwise model
+
+modf <- lm(SalePrice ~ OverallQual + GrLivArea + BsmtExposure + HouseStyle_1Story + 
+    RoofMatl_ClyTile + KitchenQual + BsmtFinSF1 + SaleType_New + 
+    Condition2_PosN + LotArea + Neighborhood_NridgHt + Neighborhood_NoRidge + 
+    BedroomAbvGr + YearBuilt + OverallCond + Neighborhood_StoneBr + 
+    BldgType_1Fam + RoofMatl_WdShngl + Neighborhood_Crawfor + 
+    Neighborhood_BrkSide + Functional + Exterior1st_CemntBd + 
+    Neighborhood_Somerst + RoofStyle_Hip + ExterQual + GarageArea + 
+    Exterior1st_BrkFace + Condition1_Norm + PoolArea + GarageType_NoGarage + 
+    Fireplaces + GarageType_Detchd + LotConfig_CulDSac + Heating_OthW + 
+    Neighborhood_NPkVill + BsmtFullBath + Neighborhood_BrDale + 
+    MSZoning_C_all + RoofMatl_TarGrv + Exterior1st_MetalSd + 
+    Exterior2nd_ImStucc + MoSold_1 + ScreenPorch + MiscFeature_TenC + 
+    TotRmsAbvGrd + LandContour_HLS + BsmtQual + BsmtCond + LotShape_IR1 + 
+    HouseStyle_2.5Fin + FireplaceQu + KitchenAbvGr + Neighborhood_Sawyer + 
+    Condition1_RRAe + HouseStyle_1.5Unf + GarageFinish + MSSubClass_120 + 
+    LotConfig_FR3 + BldgType_Twnhs + GarageType_2Types + MasVnrType_Stone + 
+    Exterior1st_ImStucc + Neighborhood_Blmngtn + MoSold_7 + MoSold_5 + 
+    Foundation_Wood + SaleType_COD + Condition1_RRAn + MSSubClass_50 + 
+    FirstFlrSF + SecondFlrSF + LowQualFinSF + MSSubClass_160 + 
+    Exterior1st_Stone + RoofMatl_Membran + BsmtHalfBath + ExterCond + 
+    Condition2_PosA + Heating_Wall + Neighborhood_Veenker + MoSold_6 + 
+    MoSold_4 + HeatingQC + LandSlope_Sev + LotShape_Reg, data=dat_scale_small)
+summary(modf)
+plot(modf)
+```
+
+```{r}
+library(packcircles)
+library(ggplot2)
+ 
+Group <- c("Overall Quality(8762)", "Neighborhood","Roof style", "PoolArea(66222)", "Near Railroad(-11403)", "New House(17784)", "GrLivArea(58249)")
+data=data.frame(group=Group, value=sample(seq(5, 20, 0.2),7,  replace = TRUE)) 
+ 
+packing <- circleProgressiveLayout(data$value, sizetype='area')
+ 
+data = cbind(data, packing)
+
+dat.gg <- circleLayoutVertices(packing, npoints=50)
+ 
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
+  geom_text(data = data, aes(x, y, size=value, label = group)) +
+  scale_size_continuous(range = c(2,4)) +
+  theme_void() + 
+  theme(legend.position="none") +
+  coord_equal()
+
+```
+
+From the stepwise regression, we select our final model with the least AIC=29586.54, and by appling this final model, we can easily find that housing price realted a lot of factors,some of these factors are listed in the circle above. To be specific, overall quality increase 1, the house price would increase 8762, and when GrLiveArea(Above grade (ground) living area square feet) increase 1, the housing price would increase a lot, which can be 58249; on the other hand, when the house near the rail road, the housing price will decrease 11403, these all meet our intuitive knowledge. 
+
+Using Stepwise regrssion helps us find the model that best fits the data according to some prespecified criterion, such as AIC(Akaike Information Criterion), BIC(Bayesian Information Criterion), and adjusted R2, but we still need to build other models which could better satisfy our goal through various machine learning tools. 
+
+```{r}
+dat_scale_small2 <- dat_scaled_onehot %>% filter(source=="test")
+for (i in 1:length(BadNames)) {
+  colnames(dat_scale_small2)[which(colnames(dat_scale_small2) == BadNames[i])] = names(BadNames[i])
+}
+dat_scale_small2$SalePrice<-predict(modf, dat_scale_small2)
+prediction<-dat_scale_small2 %>% select(Id,SalePrice)
+write.csv(prediction, "prediction.csv")
+```
+

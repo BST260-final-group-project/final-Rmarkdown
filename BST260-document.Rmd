@@ -71,7 +71,8 @@ Our project derived from a Kaggle problem, and data was downloaded from the webs
 
 #### 4.2 Data Cleaning
 
-```{r, message=FALSE}
+Numbers of missing values for each features are as follows. We don't show the features without missing values.
+```{r, message=FALSE, echo=FALSE}
 #combine train and test data set 
 library(readr)
 train <- read_csv("./train.csv")
@@ -101,7 +102,7 @@ Then, we will deal with the other columns which contain NAs by replacing the mis
 
 4.For Exterior1st and Exterior2nd, which only contain 1 missing value and there aren’t any other features that can help us determine what value we should fill in the NAs, therefore,  we replace NAs in these two columns with ‘Other’.
 
-5.In the columns that with only few missing values, we can replace the missing value with median, mean or mode value from each column
+5.In the columns that with only few missing values, we can replace the missing value with median, mean or mode value from each column. For example,
 ```{r, message=FALSE}
 #KitchenQual: filling the missing value with 'TA'.
 
@@ -138,7 +139,7 @@ Finally, we use one-hot method to deal with categorical features excluding ordin
 
 ## 5 Exploratory Analysis
 
-#### Area vs Price
+#### 5.1 Area vs Price
 
 ```{r, echo=FALSE, message=FALSE}
 library(ggplot2)
@@ -152,7 +153,7 @@ data_train %>% ggplot(aes(x = GrLivArea, y = SalePrice)) +
 
 There are two outliers which has high areas but low sale price. When fitting the models, we delete these two outliers in the training data.
 
-#### Overall Quality vs Price
+#### 5.2 Overall Quality vs Price
 
 ```{r, message=FALSE, echo=FALSE}
 data_train %>% ggplot(aes(x=as.factor(OverallQual), y=SalePrice)) +
@@ -163,7 +164,7 @@ data_train %>% ggplot(aes(x=as.factor(OverallQual), y=SalePrice)) +
 
 Conincided with our intuition, if the overall quality of the house is better, then the house price is higher.
 
-#### Year vs Price
+#### 5.3 Year vs Price
 ```{r, echo=FALSE}
 data_train %>% ggplot(aes(x=as.factor(YearBuilt), y=SalePrice)) +
   geom_boxplot() +
@@ -182,14 +183,113 @@ data_train %>% ggplot(aes(x=as.factor(YearRemodAdd), y=SalePrice)) +
 
 In general, the newer the house is, the higher the price is. But the correlation is not very strong.
 
-#### PCA
+#### 5.4 Correlation Matrix
+
+```{r, echo=FALSE, message=FALSE}
+library(dplyr)
+library(readr)
+dat_scaled_onehot <- read_csv("./feature_fillna_scaled_onehot.csv")
+dat_scale_small <- dat_scaled_onehot %>% filter(source=="train")
+#correlation
+library(corrplot)
+correlations<-cor(dat_scale_small[,unlist(lapply(dat_scale_small, is.numeric))])
+
+# only want the columns that show strong correlations with SalePrice
+corr.SalePrice <- as.matrix(sort(correlations[,'SalePrice'], decreasing = TRUE))
+
+corr.idx <- names(which(apply(corr.SalePrice, 1, function(x) (x > 0.5 | x < -0.5))))
+
+corrplot(as.matrix(correlations[corr.idx,corr.idx]), type = 'upper', method='color', addCoef.col = 'black', tl.cex = .7,cl.cex = .7, number.cex=.7)
+```
+
+
+In this part, to show correlation coefficients between sets of variables in our dataset, we used correlation matrix and then graphiclly display that through corrplot function. From the above correlogram, we can easily learn that saleprice have strong positive correlation with some factors such as overallquality(0.79), GrLiveArea(Above grade (ground) living area square feet)(0.71), ExterQual(the quality of the material on the exterior)(0.68). This correlogram can give some basic information about the relationship between variables and saleprice, which we need to predict in the future. 
+
+#### 5.5 PCA
 ![PCA Variance](./PCA_variance.png){width=80%}
 
 ![PCA Result (PC1 + PC2)](./PCA.png){width=80%}
 
 We also run PCA on our data sets. PC1 and PC2 represent 1st principal component and 2ed principal component. Top 50 features with the most meaningful effects were chosen in the plot, where distances between covariates suggest their degrees of correlation. We can see some patterns in the projection plot: garage condition is correlated with garage quality; fireplace is correlated with wood deck area.
 
-#### Lasso Regression
+#### 5.6 Stepwise Regression
+
+
+```{r, echo=FALSE, message=FALSE}
+#Stepwise using scaled data
+drop <- c("Id","SalePrice","source")
+dat_scale_small1 = dat_scale_small[,!(names(dat_scale_small) %in% drop)]
+
+BadNames <-  c(FirstFlrSF = "1stFlrSF", SecondFlrSF = "2ndFlrSF", ThreeSsnPorch = "3SsnPorch")
+
+for (i in 1:length(BadNames)) {
+  colnames(dat_scale_small)[which(colnames(dat_scale_small) == BadNames[i])] = names(BadNames[i])
+}
+
+for (i in 1:length(BadNames)) {
+  colnames(dat_scale_small1)[which(colnames(dat_scale_small1) == BadNames[i])] = names(BadNames[i])
+}
+
+f <- as.formula(paste('SalePrice ~', paste(colnames(dat_scale_small1), collapse='+')))
+
+#step1 <- step(lm(SalePrice ~ 1, data = dat_scale_small), ~HeatingQC + KitchenAbvGr + KitchenQual + LotArea + LotFrontage + LowQualFinSF + MasVnrArea + MiscVal + ExterCond + ExterQual + Fence + FireplaceQu + Fireplaces + Functional + GarageArea + GarageFinish + GarageQual + GarageYrBlt + GrLivArea + Bath + FirstFlrSF + SecondFlrSF + ThreeSsnPorch + BedroomAbvGr + BsmtCond + BsmtExposure + BsmtFinSF1 + BsmtFinSF2 + BsmtFinType1 + BsmtFinType2 + BsmtFullBath + BsmtHalfBath + BsmtQual + BsmtUnfSF + OpenPorchSF + OverallCond + OverallQual + PavedDrive + PoolArea + ScreenPorch + TotRmsAbvGrd + TotalBsmtSF + WoodDeckSF + YearBuilt + YearRemodAdd + YrSold + Heating_Floor + Heating_GasA + Heating_GasW + Heating_Grav + Heating_OthW + Heating_Wall + HouseStyle_1.5Fin + HouseStyle_1.5Unf + HouseStyle_1Story + HouseStyle_2.5Fin + HouseStyle_2.5Unf + HouseStyle_2Story + HouseStyle_SFoyer + HouseStyle_SLvl + LandContour_Bnk + LandContour_HLS + LandContour_Low + LandContour_Lvl + LandSlope_Gtl + LandSlope_Mod + LandSlope_Sev + LotConfig_Corner + LotConfig_CulDSac + LotConfig_FR2 + LotConfig_FR3 + LotConfig_Inside + LotShape_IR1 + LotShape_IR2 + LotShape_IR3 + LotShape_Reg + MSSubClass_120 + MSSubClass_150 + MSSubClass_160 + MSSubClass_180 + MSSubClass_190 + MSSubClass_20 + MSSubClass_30 + MSSubClass_40 + MSSubClass_45 + MSSubClass_50 + MSSubClass_60 + MSSubClass_70 + MSSubClass_75 + MSSubClass_80 + MSSubClass_85 + MSSubClass_90 + MSZoning_C_all + MSZoning_FV + MSZoning_RH + MSZoning_RL + MSZoning_RM + MasVnrType_BrkCmn + MasVnrType_BrkFace + MasVnrType_None + MasVnrType_Stone + MiscFeature_Gar2 + MiscFeature_Othr + MiscFeature_Shed + MiscFeature_TenC + MiscFeature_none + MoSold_1 + MoSold_10 + MoSold_11 + MoSold_12 + MoSold_2 + MoSold_3 + MoSold_4 + MoSold_5 + MoSold_6 + MoSold_7 + MoSold_8 + MoSold_9 + Neighborhood_Blmngtn + Neighborhood_Blueste + Neighborhood_BrDale + Neighborhood_BrkSide + Neighborhood_ClearCr + Neighborhood_CollgCr + Neighborhood_Crawfor + Neighborhood_Edwards + Neighborhood_Gilbert + Neighborhood_IDOTRR + Neighborhood_MeadowV + Neighborhood_Mitchel + Neighborhood_NAmes + Neighborhood_NPkVill + Neighborhood_NWAmes + Neighborhood_NoRidge + Neighborhood_NridgHt + Neighborhood_OldTown + Neighborhood_SWISU + Neighborhood_Sawyer + Neighborhood_SawyerW + Neighborhood_Somerst + Neighborhood_StoneBr + Neighborhood_Timber + Neighborhood_Veenker + Exterior1st_AsbShng + Exterior1st_AsphShn + Exterior1st_BrkComm + Exterior1st_BrkFace + Exterior1st_CBlock + Exterior1st_CemntBd + Exterior1st_HdBoard + Exterior1st_ImStucc + Exterior1st_MetalSd + Exterior1st_Other + Exterior1st_Plywood + Exterior1st_Stone + Exterior1st_Stucco + Exterior1st_VinylSd + Exterior1st_WdSdng + Exterior1st_WdShing + Exterior2nd_AsbShng + Exterior2nd_AsphShn + Exterior2nd_BrkCmn + Exterior2nd_BrkFace + Exterior2nd_CBlock + Exterior2nd_CmentBd + Exterior2nd_HdBoard + Exterior2nd_ImStucc + Exterior2nd_MetalSd + Exterior2nd_Other + Exterior2nd_Plywood + Exterior2nd_Stone + Exterior2nd_Stucco + Exterior2nd_VinylSd + Exterior2nd_WdSdng + Exterior2nd_WdShng + Foundation_BrkTil + Foundation_CBlock + Foundation_PConc + Foundation_Slab + Foundation_Stone + Foundation_Wood + GarageType_2Types + GarageType_Attchd + GarageType_Basment + GarageType_BuiltIn + GarageType_CarPort + GarageType_Detchd + GarageType_NoGarage + Alley_Grvl + Alley_None + Alley_Pave + BldgType_1Fam + BldgType_2fmCon + BldgType_Duplex + BldgType_Twnhs + BldgType_TwnhsE + CentralAir_N + CentralAir_Y + Condition1_Artery + Condition1_Feedr + Condition1_Norm + Condition1_PosA + Condition1_PosN + Condition1_RRAe + Condition1_RRAn + Condition1_RRNe + Condition1_RRNn + Condition2_Artery + Condition2_Feedr + Condition2_Norm + Condition2_PosA + Condition2_PosN + Condition2_RRAe + Condition2_RRAn + Condition2_RRNn + Electrical_FuseA + Electrical_FuseF + Electrical_FuseP + Electrical_Mix + Electrical_SBrkr + PoolQC_Good + PoolQC_None + RoofMatl_ClyTile + RoofMatl_CompShg + RoofMatl_Membran + RoofMatl_Metal + RoofMatl_Roll + RoofMatl_TarGrv + RoofMatl_WdShake + RoofMatl_WdShngl + RoofStyle_Flat + RoofStyle_Gable + RoofStyle_Gambrel + RoofStyle_Hip + RoofStyle_Mansard + RoofStyle_Shed + SaleType_COD + SaleType_CWD + SaleType_Con + SaleType_ConLD + SaleType_ConLI + SaleType_ConLw + SaleType_New + SaleType_Oth + SaleType_WD + Street_Grvl + Street_Pave + Utilities_AllPub + Utilities_NoSeWa, direction = "both")
+
+#final stepwise model
+
+modf <- lm(SalePrice ~ OverallQual + GrLivArea + BsmtExposure + HouseStyle_1Story + 
+    RoofMatl_ClyTile + KitchenQual + BsmtFinSF1 + SaleType_New + 
+    Condition2_PosN + LotArea + Neighborhood_NridgHt + Neighborhood_NoRidge + 
+    BedroomAbvGr + YearBuilt + OverallCond + Neighborhood_StoneBr + 
+    BldgType_1Fam + RoofMatl_WdShngl + Neighborhood_Crawfor + 
+    Neighborhood_BrkSide + Functional + Exterior1st_CemntBd + 
+    Neighborhood_Somerst + RoofStyle_Hip + ExterQual + GarageArea + 
+    Exterior1st_BrkFace + Condition1_Norm + PoolArea + GarageType_NoGarage + 
+    Fireplaces + GarageType_Detchd + LotConfig_CulDSac + Heating_OthW + 
+    Neighborhood_NPkVill + BsmtFullBath + Neighborhood_BrDale + 
+    MSZoning_C_all + RoofMatl_TarGrv + Exterior1st_MetalSd + 
+    Exterior2nd_ImStucc + MoSold_1 + ScreenPorch + MiscFeature_TenC + 
+    TotRmsAbvGrd + LandContour_HLS + BsmtQual + BsmtCond + LotShape_IR1 + 
+    HouseStyle_2.5Fin + FireplaceQu + KitchenAbvGr + Neighborhood_Sawyer + 
+    Condition1_RRAe + HouseStyle_1.5Unf + GarageFinish + MSSubClass_120 + 
+    LotConfig_FR3 + BldgType_Twnhs + GarageType_2Types + MasVnrType_Stone + 
+    Exterior1st_ImStucc + Neighborhood_Blmngtn + MoSold_7 + MoSold_5 + 
+    Foundation_Wood + SaleType_COD + Condition1_RRAn + MSSubClass_50 + 
+    FirstFlrSF + SecondFlrSF + LowQualFinSF + MSSubClass_160 + 
+    Exterior1st_Stone + RoofMatl_Membran + BsmtHalfBath + ExterCond + 
+    Condition2_PosA + Heating_Wall + Neighborhood_Veenker + MoSold_6 + 
+    MoSold_4 + HeatingQC + LandSlope_Sev + LotShape_Reg, data=dat_scale_small)
+summary(modf)
+plot(modf)
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(packcircles)
+library(ggplot2)
+ 
+Group <- c("Overall Quality(8762)", "Neighborhood","Roof style", "PoolArea(66222)", "Near Railroad(-11403)", "New House(17784)", "GrLivArea(58249)")
+data=data.frame(group=Group, value=sample(seq(5, 20, 0.2),7,  replace = TRUE)) 
+ 
+packing <- circleProgressiveLayout(data$value, sizetype='area')
+ 
+data = cbind(data, packing)
+
+dat.gg <- circleLayoutVertices(packing, npoints=50)
+ 
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
+  geom_text(data = data, aes(x, y, size=value, label = group)) +
+  scale_size_continuous(range = c(2,4)) +
+  theme_void() + 
+  theme(legend.position="none") +
+  coord_equal()
+
+```
+
+From the stepwise regression, we select our final model with the least AIC=29586.54, and by appling this final model, we can easily find that housing price realted a lot of factors,some of these factors are listed in the circle above. To be specific, overall quality increase 1, the house price would increase 8762, and when GrLiveArea(Above grade (ground) living area square feet) increase 1, the housing price would increase a lot, which can be 58249; on the other hand, when the house near the rail road, the housing price will decrease 11403, these all meet our intuitive knowledge. 
+
+Using Stepwise regrssion helps us find the model that best fits the data according to some prespecified criterion, such as AIC(Akaike Information Criterion), BIC(Bayesian Information Criterion), and adjusted R2, but we still need to build other models which could better satisfy our goal through various machine learning tools. 
+
+#### 5.7 Lasso Regression
 
 To get some intuition about the features, we do not scale the values of each feature, which makes the result easier to interprete. The result of lasso regression on non-scale data is as follows. We also show the cofficients of lasso regression under the optimal parameter.
 
@@ -236,12 +336,12 @@ coef(cvfit, s = "lambda.min")
 Based on the result of lasso regression, we can know the average price for some house components. A fire place is worth 3000 dollars while a full bath only costs us 130 dollars (the price of bathroom is a little weired). The coefficient of RoofMatl_ClyTile is -527,000, which means that house would be super cheap if its roof material is clay tile. The lasso also tells us that it doesn't matter in which month you sell your house in the year.
 
 
-#### Random Forest
+#### 5.8 Random Forest
 ![Random Forest](./random-forest.png){width=80%}
 
 The result was obtained from random forest method based on H2o cluster. Variables are ranked according to their importance when predicting the house sale prices. Among them, Rates the overall material and finish of the house, Evaluates the quality of the material on the exterior, and Size of garage in car capacity are the most meaningful factors.
 
-#### Gradient Boosting
+#### 5.9 Gradient Boosting
 
 ![Gradient Boosting](./xgboost.png){width=80%}
 
