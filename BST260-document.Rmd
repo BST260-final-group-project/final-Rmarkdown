@@ -11,27 +11,42 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 1 Overview and Motivation
 
-Growing unaffordability of housing has become one of the major challenges for metropolitan cities around the world, particularly in developing countries with increasingly polarizing economic and social classes such as China. To solve the affordability issue in the commercialized housing market we are currently facing, it is essential to understand what are the top influential factors of the housing price. Apart from the more obvious driving forces such as the inflation and the scarcity of land, there are also a number of variables that are worth looking into. Considering the fact that house mortgage tend to be the biggest financial obligation most home-owners carry, it would be extremely helpful if we could study the variables in depth and be able to provide a model that could more accurately estimate home prices, so that people could make better decision when it comes to home investment.
+Growing unaffordability of housing has become one of the major challenges for metropolitan cities around the world. In order to gain a better understanding of the commercialized housing market we are currently facing, we want to figure out what are the top influential factors of the housing price. Apart from the more obvious driving forces such as the inflation and the scarcity of land, there are also a number of variables that are worth looking into. Therefore, we choose to study the house prices predicting problem on Kaggle, which enables us to dig into the variables in depth and to provide a model that could more accurately estimate home prices. In this way, people could make better decisions when it comes to home investment.
+
+Our object is to discuss the major factors that affect housing price and make precise predictions for it. We use 79 explanatory variables including almost every aspect of residential homes in Ames, Iowa. Methods of both statistical regression models and machine learning regression models are applied and further compared according to their performance to better estimate the final price of each house. The model provides price prediction based on similar comparables of people’s dream houses, which allows both buyers and sellers to better negotiate home prices according to market trend. 
+
 
 ## 2 Related Work
 
-#### 2.1 Lasso Regression
-Lasso (least absolute shrinkage and selection operator) regression is a regularized linear regression. It uses L1 norm to constrain the coefficients of the fitting model. Usually, some coefficients will be set to 0 under the constrain. Therefore, the lasso regression is more robust compared to ordinary linear regression. (Tibshirani, Robert. "Regression shrinkage and selection via the lasso." Journal of the Royal Statistical Society. Series B (Methodological) (1996): 267-288.2)
+#### 2.1 Stepwise Selection
+Stepwise Selection combines elements of both forward selection and backward elimination, allow us either to remove covariates from our previous model or add back in covariates that we had previously eliminated from our model, and in this sense, giving us chances to consider all possible subsets of the pool of explanatory variables and find the model that best fits the data according to some prespecified criterion, such as AIC(Akaike Information Criterion), BIC(Bayesian Information Criterion), and adjusted R2.
+(Jennrich, Robert I. "Stepwise regression." Statistical methods for digital computers 3 (1977): 58-75.)
 
-#### 2.2 Random Forest
+#### 2.2 LOWESS
+LOWESS (Locally Weighted Scatterplot Smoothing), or LOESS (Locally Weighted Smoothing), is often applied in regression analysis that creates a smooth line through a scatter plot. It is especially helpful when detecting nonlinear relationship between variables and predicting trends. In our study, LOWESS was first used to detect potential nonlinear associations between variables and sale prices. Since it performed the best results compared to other smoothing methods,  we then used it to predict prices after PCA preprocessing. (Cleveland, William S. "LOWESS: A program for smoothing scatterplots by robust locally weighted regression." The American Statistician 35.1 (1981): 54-54.)
+
+#### 2.3 PCA
+PCA (Principal Component Analysis) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components [1].
+As mentioned in class, we can’t estimate the estimators of a high-dimensional nonlinear model via lm function. So we applied PCA to estimate predictors by minimizing  the squared error of the approximation.
+(Abdi, H. and Williams, L.J., 2010. Principal component analysis. Wiley interdisciplinary reviews: computational statistics, 2(4), pp.433-459.)
+
+#### 2.4 Lasso Regression
+Lasso (Least Absolute Shrinkage and Selection Operator) regression is a regularized linear regression. It uses L1 norm to constrain the coefficients of the fitting model. Usually, some coefficients will be set to 0 under the constrain. Therefore, the lasso regression is more robust compared to ordinary linear regression. (Tibshirani, Robert. "Regression shrinkage and selection via the lasso." Journal of the Royal Statistical Society. Series B (Methodological) (1996): 267-288.2)
+
+#### 2.5 Random Forest
 Random forest is an ensembling machine learning method basing on classification tree or regression tree. In general, random forest will generate many decision trees and average their predictions to make the final prediction. When generating each decision tree, the random forest will use a subset of all features, which avoids the overfitting problem. (Liaw, Andy, and Matthew Wiener. "Classification and regression by randomForest." R news 2.3 (2002): 18-22.)
 
-#### 2.3 Gradient Boosting
+#### 2.6 Gradient Boosting
 
 Similar to random forest, gradient boosting is another ensembling machine learning method basing on classification tree or regression tree. While in random forest every tree is weighted the same, every tree in gradient boosting tries to minimize the error between target and trees built previously. Gradient boosting is now a popular machine learning framework for both academia and industry. (Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.)
 
-#### 2.4 Ensemble Learning
+#### 2.7 Ensemble Learning
 
-Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model may cancel out in the ensembled model. In our project, we will try to ensemble the regression techniques we use (e.g. GLM, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. "Ensemble learning." The handbook of brain theory and neural networks 2 (2002): 110-125.)
+Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model may cancel out in the ensembled model. In our project, we will try to ensemble the regression techniques we use (e.g. lasso regression, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. "Ensemble learning." The handbook of brain theory and neural networks 2 (2002): 110-125.)
 
 In our project, we just simply stack several models, i.e. average their predictions to make our final prediction.
 
-#### 2.5 Kernel from Kaggle
+#### 2.8 Kernel from Kaggle
 
 In Kaggle community, many users provide their kernals to share ideas. Kernals we have seen are as follows (but not limited to): [Comprehensive data exploration with Python](https://www.kaggle.com/pmarcelino/comprehensive-data-exploration-with-python), [Stacked Regressions : Top 4% on LeaderBoard](https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard), [RandomForestRegressor](https://www.kaggle.com/dfitzgerald3/randomforestregressor).
 
@@ -167,6 +182,12 @@ data_train %>% ggplot(aes(x=as.factor(YearRemodAdd), y=SalePrice)) +
 
 In general, the newer the house is, the higher the price is. But the correlation is not very strong.
 
+#### PCA
+![PCA Variance](./PCA_variance.png){width=80%}
+
+![PCA Result (PC1 + PC2)](./PCA.png){width=80%}
+
+We also run PCA on our data sets. PC1 and PC2 represent 1st principal component and 2ed principal component. Top 50 features with the most meaningful effects were chosen in the plot, where distances between covariates suggest their degrees of correlation. We can see some patterns in the projection plot: garage condition is correlated with garage quality; fireplace is correlated with wood deck area.
 
 #### Lasso Regression
 
@@ -214,6 +235,17 @@ coef(cvfit, s = "lambda.min")
 
 Based on the result of lasso regression, we can know the average price for some house components. A fire place is worth 3000 dollars while a full bath only costs us 130 dollars (the price of bathroom is a little weired). The coefficient of RoofMatl_ClyTile is -527,000, which means that house would be super cheap if its roof material is clay tile. The lasso also tells us that it doesn't matter in which month you sell your house in the year.
 
+
+#### Random Forest
+![Random Forest](./random-forest.png){width=80%}
+
+The result was obtained from random forest method based on H2o cluster. Variables are ranked according to their importance when predicting the house sale prices. Among them, Rates the overall material and finish of the house, Evaluates the quality of the material on the exterior, and Size of garage in car capacity are the most meaningful factors.
+
+#### Gradient Boosting
+
+![Gradient Boosting](./xgboost.png){width=80%}
+
+The result was obtained from gradient boosting (xgboosting) based on H2o cluster. Variables are ranked according to their importance when predicting the house sale prices. Among them, Lot size in square feet, Heating quality and condition, and Kitchen quality are the most meaningful factors.
 
 ## 6 Final Analysis
 

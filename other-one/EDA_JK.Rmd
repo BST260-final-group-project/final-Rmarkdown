@@ -1,0 +1,104 @@
+---
+title: "EDA"
+author: "Jian Kang"
+date: "12/1/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Data processing
+```{r, include=FALSE}
+library(readr)
+fillna <- read_csv("data/feature_fillna_onehot.csv")
+scaled <- read_csv("data/feature_fillna_scaled_onehot.csv")
+feature_fillna <- read_csv("data/feature_fillna.csv")
+
+fillna_train <- fillna[fillna$Id <= 1460, ]
+fillna_test <- fillna[fillna$Id > 1460, ]
+
+scaled_train <- scaled[scaled$Id <= 1460, ]
+scaled_test <- scaled[scaled$Id > 1460, ]
+
+feature_train <- feature_fillna[fillna$Id <= 1460, ]
+feature_test <- feature_fillna[fillna$Id > 1460, ]
+```
+
+
+```{r}
+#Libraries
+library(MASS)
+library(leaps)
+library(olsrr)
+library(dplyr)
+```
+
+
+```{r}
+##Covariates
+
+#mod_step <- step(lm(SalePrice ~ 1, data = train), ~ MSSubClass + MSZoning + LotFrontage + LotArea + Street + Alley + LotShape + LandContour + Utilities + LotConfig + LandSlope + Neighborhood + Condition1 + Condition2 + BldgType + HouseStyle + OverallQual + OverallCond + YearBuilt + YearRemodAdd + RoofStyle + RoofMatl + Exterior1st + Exterior2nd + MasVnrType + MasVnrArea + ExterQual + ExterCond + Foundation + BsmtQual + BsmtCond + BsmtExposure + BsmtFinType1 + BsmtFinSF1 + BsmtFinType2 + BsmtFinSF2 + BsmtUnfSF + TotalBsmtSF + Heating + HeatingQC + CentralAir + Electrical + 1stFlrSF + 2ndFlrSF + LowQualFinSF + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + FullBath + Bedroom + Kitchen + KitchenQual + TotRmsAbvGrd + Fireplaces + FireplaceQu + Functional + GarageType + GarageYrBlt + GarageFinish + GarageCars + GarageArea + GarageQual + GarageCond + PavedDrive + WoodDeckSF + OpenPorchSF + EnclosedPorch + 3SsnPorch + ScreenPorch + PoolArea + PoolQC + Fence + MiscFeature + MiscVal + MoSold + YrSold + SaleType + SaleCondition, direction = "both")
+```
+
+## Correlation
+```{r}
+cors = cor(feature_train[ , sapply(feature_train, is.numeric)])
+high_cor = which(abs(cors) > 0.6 & (abs(cors) < 1))
+rows = rownames(cors)[((high_cor-1) %/% 48)+1]
+cols = colnames(cors)[ifelse(high_cor %% 48 == 0, 48, high_cor %% 48)]
+vals = cors[high_cor]
+
+cor_data = data.frame(cols=cols, rows=rows, correlation=vals)
+cor_data
+```
+
+
+
+## Transformation
+```{r}
+fillna_train$logPrice <- log(fillna_train$SalePrice)
+summary(fillna_train$logPrice)
+boxplot(fillna_train$logPrice)
+
+library(ggplot2)
+ggplot(fillna_train, aes(logPrice)) + geom_histogram(aes(y=..density..), position = "identity",  bins = 50, alpha = .5) + geom_density(alpha = .3)
+```
+
+## PCA
+
+```{r}
+feature_train$logPrice <- log(feature_train$SalePrice)
+nums <- sapply(feature_train, is.numeric)
+feature.pca <- prcomp(feature_train[ , nums],
+                 center = TRUE,
+                 scale. = TRUE) 
+summary(feature.pca)
+plot(feature.pca, type = "l")
+
+#another data set
+pcadata <- fillna_train
+pcadata <- pcadata[, -c(1,2)]
+pcadata <- pcadata[, colSums(pcadata != 0) > 0]
+pcadata <- pcadata[,!apply(pcadata, MARGIN = 2, function(x) max(x, na.rm = TRUE) == min(x, na.rm = TRUE))]
+
+pca1 <- prcomp(pcadata,
+                 center = TRUE,
+                 scale. = TRUE) 
+summary(pca1)
+plot(pca1, type = "l")
+
+
+##plot
+library(ggplot2)
+scores = as.data.frame(pca1$x)
+mainpca <- as.data.frame(pca1$rotation[1:50,1:4])
+
+ggplot(data = mainpca, aes(x = PC1, y = PC2, label = rownames(mainpca))) +  
+  geom_hline(yintercept = 0, colour = "gray65") +
+  geom_vline(xintercept = 0, colour = "gray65") +
+  geom_text(colour = "tomato", alpha = 0.8, size = 4) +
+  ggtitle("PCA plot")
+```
