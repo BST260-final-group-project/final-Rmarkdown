@@ -1,0 +1,43 @@
+---
+title: "BST260 Document"
+author: "Jian Kang, Chi Zhang, Hanyu Jiang, Jiajing Chen"
+date: "11/28/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview and Motivation
+
+Growing unaffordability of housing has become one of the major challenges for metropolitan cities around the world, particularly in developing countries with increasingly polarizing economic and social classes such as China. To solve the affordability issue in the commercialized housing market we are currently facing, it is essential to understand what are the top influential factors of the housing price. Apart from the more obvious driving forces such as the inflation and the scarcity of land, there are also a number of variables that are worth looking into. Considering the fact that house mortgage tend to be the biggest financial obligation most home-owners carry, it would be extremely helpful if we could study the variables in depth and be able to provide a model that could more accurately estimate home prices, so that people could make better decision when it comes to home investment.
+
+## Related Work
+
+#### Lasso Regression
+Lasso (least absolute shrinkage and selection operator) regression is a regularized linear regression. It uses L1 norm to constrain the coefficients of the fitting model. Usually, some coefficients will be set to 0 under the constrain. Therefore, the lasso regression is more robust compared to ordinary linear regression. (Tibshirani, Robert. "Regression shrinkage and selection via the lasso." Journal of the Royal Statistical Society. Series B (Methodological) (1996): 267-288.2)
+
+#### Random Forest
+Random forest is an ensembling machine learning method basing on classification tree or regression tree. In general, random forest will generate many decision trees and average their predictions to make the final prediction. When generating each decision tree, the random forest will use a subset of all features, which avoids the overfitting problem. (Liaw, Andy, and Matthew Wiener. "Classification and regression by randomForest." R news 2.3 (2002): 18-22.)
+
+#### Gradient Boosting
+
+Similar to random forest, gradient boosting is another ensembling machine learning method basing on classification tree or regression tree. While in random forest every tree is weighted the same, every tree in gradient boosting tries to minimize the error between target and trees built previously. Gradient boosting is now a popular machine learning framework for both academia and industry. (Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.)
+
+#### Ensemble Learning
+
+Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model can cancel out to certain degree. In our project, we will try to ensemble the regression techniques we use (e.g. GLM, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. "Ensemble learning." The handbook of brain theory and neural networks 2 (2002): 110-125.)
+
+In our project, we just simply stack several models, i.e. average their predictions to make our final prediction.
+
+#### Kernel from Kaggle
+
+In Kaggle community, many users provide their kernals to share ideas. Kernals we have seen are as follows (but not limited to): [Comprehensive data exploration with Python](https://www.kaggle.com/pmarcelino/comprehensive-data-exploration-with-python), [Stacked Regressions : Top 4% on LeaderBoard](https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard), [RandomForestRegressor](https://www.kaggle.com/dfitzgerald3/randomforestregressor).
+
+## Initial Questions
+
+In this project, we want to answer following two questions:
+
+1. What are the important features that affect the house price?
+2. How to build a model to predict the house price?
