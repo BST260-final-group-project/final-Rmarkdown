@@ -9,35 +9,197 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Overview and Motivation
+## 1 Overview and Motivation
 
 Growing unaffordability of housing has become one of the major challenges for metropolitan cities around the world, particularly in developing countries with increasingly polarizing economic and social classes such as China. To solve the affordability issue in the commercialized housing market we are currently facing, it is essential to understand what are the top influential factors of the housing price. Apart from the more obvious driving forces such as the inflation and the scarcity of land, there are also a number of variables that are worth looking into. Considering the fact that house mortgage tend to be the biggest financial obligation most home-owners carry, it would be extremely helpful if we could study the variables in depth and be able to provide a model that could more accurately estimate home prices, so that people could make better decision when it comes to home investment.
 
-## Related Work
+## 2 Related Work
 
-#### Lasso Regression
+#### 2.1 Lasso Regression
 Lasso (least absolute shrinkage and selection operator) regression is a regularized linear regression. It uses L1 norm to constrain the coefficients of the fitting model. Usually, some coefficients will be set to 0 under the constrain. Therefore, the lasso regression is more robust compared to ordinary linear regression. (Tibshirani, Robert. "Regression shrinkage and selection via the lasso." Journal of the Royal Statistical Society. Series B (Methodological) (1996): 267-288.2)
 
-#### Random Forest
+#### 2.2 Random Forest
 Random forest is an ensembling machine learning method basing on classification tree or regression tree. In general, random forest will generate many decision trees and average their predictions to make the final prediction. When generating each decision tree, the random forest will use a subset of all features, which avoids the overfitting problem. (Liaw, Andy, and Matthew Wiener. "Classification and regression by randomForest." R news 2.3 (2002): 18-22.)
 
-#### Gradient Boosting
+#### 2.3 Gradient Boosting
 
 Similar to random forest, gradient boosting is another ensembling machine learning method basing on classification tree or regression tree. While in random forest every tree is weighted the same, every tree in gradient boosting tries to minimize the error between target and trees built previously. Gradient boosting is now a popular machine learning framework for both academia and industry. (Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.)
 
-#### Ensemble Learning
+#### 2.4 Ensemble Learning
 
-Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model can cancel out to certain degree. In our project, we will try to ensemble the regression techniques we use (e.g. GLM, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. "Ensemble learning." The handbook of brain theory and neural networks 2 (2002): 110-125.)
+Ensemble learning combines multiple statistical and machine learning algorithms together to achieve better predictive performance than any algorithm alone, because the errors in each model may cancel out in the ensembled model. In our project, we will try to ensemble the regression techniques we use (e.g. GLM, gradient boosting), to predict the sale prices and compare the ensembled model with other models.(Dietterich, Thomas G. "Ensemble learning." The handbook of brain theory and neural networks 2 (2002): 110-125.)
 
 In our project, we just simply stack several models, i.e. average their predictions to make our final prediction.
 
-#### Kernel from Kaggle
+#### 2.5 Kernel from Kaggle
 
 In Kaggle community, many users provide their kernals to share ideas. Kernals we have seen are as follows (but not limited to): [Comprehensive data exploration with Python](https://www.kaggle.com/pmarcelino/comprehensive-data-exploration-with-python), [Stacked Regressions : Top 4% on LeaderBoard](https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard), [RandomForestRegressor](https://www.kaggle.com/dfitzgerald3/randomforestregressor).
 
-## Initial Questions
+## 3 Initial Questions
 
 In this project, we want to answer following two questions:
 
 1. What are the important features that affect the house price?
-2. How to build a model to predict the house price?
+2. How to build a model to predict the house price? The metric to evaluate the models is Root-Mean-Square-Error (RMSE) between the logarithm of the predicted value and the logarithm of the observed sales price:
+
+$$
+\sqrt{\frac{1}{N}\sum_{i=1}^{N} (\ln y_i - \ln \hat{y_i})},
+$$
+where $y_i$ is the true house price and $\hat{y_i}$ is our prediction of the house price.
+
+
+## 4 Data
+
+#### 4.1 Data Source
+
+Our project derived from a Kaggle problem, and data was downloaded from the website: https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data. 
+
+#### 4.2 Data Cleaning
+
+```{r, message=FALSE}
+#combine train and test data set 
+library(readr)
+train <- read_csv("./train.csv")
+test <- read_csv("./test.csv")
+combined <- rbind(within(train, rm('Id','SalePrice')), within(test, rm('Id')))
+#check NA in dataset
+na.cols <- which(colSums(is.na(combined)) > 0)
+sort(colSums(sapply(combined[na.cols], is.na)), decreasing = TRUE)
+# we can see that there are 34 columns have missing value, some of them are pretty small part is missing, which can be seen as mistake; while the others contain such a big percentage missing value, such as MiscFeature(2814/2919), over 96% of this column is missing value. 
+```
+
+From the previous check, we can find that our dataset has a lot of missing value, which we need to clean the dataset and fill in the NA with appropriate value to make our prediction. Then, we try to fill the NAs by using their properties according to the value in those columns. 
+
+First, for the columns contain large percentage of NAs, we may remove the columns or combine them with other columns and we fill in the missing value with "none".
+
+PoolQC(2909/2919=99.66%)
+MiscFeature(2814/2919=96.4%)
+Alley(2721/2919=93.22%)
+
+Then, we will deal with the other columns which contain NAs by replacing the missing values according to the strong correlation within those columns and determine the value we should fill in. 
+
+1.For columns like Fence, FireplaceQu, BsmtCond, BsmtExposure, BsmtFinType2, BsmtFinType1, BsmtFinSF2 and BsmtQual, the NA is meaningful, thus, we see these NAs as no fence, no fireplace, no Basement, and when we transform these categorical data into numeric ones, we set these NAs as 0.
+
+2.GarageQual and GarageCond, which highly correlated, we keep GarageQual and remove GarageCond, and then transform into numeric data
+
+3.GarageYrBlt:159 NAs, except one outlier(2207), which we deal with a typo, and change that to '2007'("YearBuilt" = 2006); others, we saw those as the very original ones which maybe built earlier than the data can be reached, Min-1 = 1894
+
+4.For Exterior1st and Exterior2nd, which only contain 1 missing value and there aren’t any other features that can help us determine what value we should fill in the NAs, therefore,  we replace NAs in these two columns with ‘Other’.
+
+5.In the columns that with only few missing values, we can replace the missing value with median, mean or mode value from each column
+```{r, message=FALSE}
+#KitchenQual: filling the missing value with 'TA'.
+
+#Electrical: filling the missing value with 'FuseA'
+
+#Utilities: filling the missing value with 'AllPub'
+
+#SaleType: filling the missing value with 'WD'
+
+#Mszoning: filling the missing value according to the frequent value for each subclass 
+combined$MSZoning[c(2217,2905)] = 'RL'
+combined$MSZoning[c(1916,2251)] = 'RM'
+
+#GarageArea, GarageCars, GarageFinish, GarageType, LotFrontage, Functional: fill the missing value by using median
+
+#MasVnrType&MasVnrArea: for the ones have both NAs in these two columns, fill in the NAs with 'none' in MasVnrType and '0' in MasVnrArea, and only one with MasVnrArea but not type(#2611, estimate type by similar area-Brkface)
+combined[2611, 'MasVnrType'] = 'BrkFace'
+
+#BsmtFinSF1, BsmtUnfSF: filling in the missing value with mean 
+
+#BsmtFullBath & BsmtHalfBath: fill in the NAs with '0'
+
+```
+
+Third, after filling in the missing value of our original dataset, we can also combine some columns and transform ordinal feature into numeric to make better prediction, which can solve our initial objectives of our project.
+
+1.combine bath= full bath + half bath
+
+2.Transform ordinal feature, such as ExterCond, ExterQual, Functional, GarageFinish, GarageQual, HeatingQC, KitchenQual, OverallCond, OverallQual, BsmtCond, BsmtQual, BsmtExposure, BsmtFinType1, BsmtFinType2, GarageCond, PavedDrive to numeric data
+
+3.Also, some columns in our dataset such as MoSold and MSSubClassRead, they are read as numerical but actually are categorical.
+
+Finally, we use one-hot method to deal with categorical features excluding ordinal ones. For example, there are two possible values - "Grvl" and "Pave" - for the feature "Street". In the new dataframe, we create two new columns "Street_Grvl" and "Street_Pave", and delete the old column "Street". If the observation's value for "Street" is "Grvl" in the old dataframe, then in the new dataframe "Street_Grvl" is set to 1 and "Street_Pave" is set to 0.
+
+## 5 Exploratory Analysis
+
+#### Lasso
+
+To get some intuition about the features, we do not scale the values of each feature, which makes the result easier to interprete. The result of lasso regression on non-scale data is as follows. We also show the cofficients of lasso regression under the optimal parameter.
+
+```{r, echo=FALSE, message=FALSE}
+# Lasso library
+library(assertive, warn.conflicts = FALSE)
+library(glmnet)
+library(dplyr)
+
+# Set seed
+set.seed(260)
+data_all <- read.csv("feature_fillna_onehot.csv")
+data_all <- data_all %>% mutate(TotalSF = TotalBsmtSF + X1stFlrSF + X2ndFlrSF)
+
+# Delete "Id" and "source" in train data
+data_train <- data_all %>% filter(source == "train")
+data_train <- subset(data_train, select = -Id)
+data_train <- subset(data_train, select = -source)
+
+# X and y for training
+y_train <- data_train$SalePrice
+X_train <- subset(data_train, select = -SalePrice)
+
+# Scale numerical features
+#col_num <- c("LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", 
+#               "TotalBsmtSF", "X1stFlrSF", "X2ndFlrSF", "LowQualFinSF", "GrLivArea", "TotRmsAbvGrd", 
+#               "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch",
+#              "PoolArea", "MiscVal", "TotalSF")
+#for (col in col_num){
+#  X_train[col] <- scale(X_train[col])
+#}
+
+# It is easier to interpret the result if the data is not scaled
+# Lasso regression
+fit = glmnet(as.matrix(X_train), y_train)
+plot(fit)
+
+# Cross validation to find the optimal lambda
+cvfit <- cv.glmnet(as.matrix(X_train), y_train)
+coef(cvfit, s = "lambda.min")
+```
+
+
+Based on the result of lasso regression, we can know the average price for some house components. A fire place is worth 3000 dollars while a full bath only costs us 130 dollars (the price of bathroom is a little weired). The coefficient of RoofMatl_ClyTile is -527,000, which means that house would be super cheap if its roof material is clay tile. The lasso also tells us that it doesn't matter in which month you sell your house in the year.
+
+
+## 6 Final Analysis
+
+#### 6.1 Basic Models
+
+We use 5-fold cross validation to see how each model performs. (Code is on: https://github.com/BST260-final-group-project/04-Machine-Learning-Prediction/tree/HYJiang) 
+
+Each model's RMSEs in cross validation (CV) and in leaderboard (LB) are as follows:
+
+```{r, message=FALSE, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(knitr)
+rmse_results <- data_frame(method = "Lasso", RMSE_CV = 0.1095, RMSE_LB = 0.1219)
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "Gradient Boosting (sklearn)",  
+                                     RMSE_CV = 0.1153,
+                                     RMSE_LB = 0.1204))
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "XGBoosting",  
+                                     RMSE_CV = 0.1146,
+                                     RMSE_LB = 0.1234))
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method = "Random Forest",  
+                                     RMSE_CV = 0.1360,
+                                     RMSE_LB = 0.1419))
+rmse_results %>% kable
+```
+
+Alough lasso performs best in cross validation, but gradient boosting model provided by sk-learn is better in leader board. We think that it comes from the overfitting problem of lasso regression. In both cross validation and leaderboard, the random forest does not perform well. In this test, random forest avoid the problem of overfitting, but it underfits the data at the same time.
+
+#### 6.2 Ensemble Method (Stacking)
+
+Based on the above result, we choose two models - lasso and gradient boosting in sklearn, and average their predictions to make our final prediction. The RMSE of the stacking model is 0.1169, which leads us to 385/2636 (top 15%) in the leaderboard.

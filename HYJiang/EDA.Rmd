@@ -52,4 +52,5 @@ cvfit <- cv.glmnet(as.matrix(X_train), y_train)
 coef(cvfit, s = "lambda.min")
 ```
 
+
 Based on the result of lasso regression, we can know the average price for some house components. A fire place is worth 3000 dollars while a full bath only costs us 130 dollars (the price of bathroom is a little weired). The coefficient of RoofMatl_ClyTile is -527,000, which means that house would be super cheap if its roof material is clay tile. The lasso also tells us that it doesn't matter in which month you sell your house.
